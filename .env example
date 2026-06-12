@@ -1,28 +1,27 @@
+
 #########################################
 # Name your machine: 				   	#
-#
+#########################################
 HOST_MACHINE_NAME=
 
-#########################################################
-# Do you own a domain you can use for real SSL certs? 	#
-#									(ex: my-domain.com)
+#################################################
+#   Your own public domain for real SSL certs?  #
+#################################################		
 MY_DOMAIN=
 
 #########################################
 # Where are your critical directories? 	#
-#						
-CONFIG=/Users/sutton585/Documents/Git/northstar/config
-VAULTS=${CONFIG}/vaults
-MEDIA=/Users/sutton585/Documents/Git/
-
 #########################################
-# Defaults. Safe to override: 	 		#
-#
-HOST={HOST_MACHINE_NAME:-bully}
-DOCKER_NETWORK=${HOST}_default
+CONFIG=/path/to/config-directory
+VAULTS=${CONFIG}/vaults
+MEDIA=/path/to/media-directory
 
-#################
-# TRAEFIK / SSL #
-#################
+#################################
+#   TRAEFIK / SSL  Defaults.	#
+#################################
+#	Safe to overwrite			#
+HOST=${HOST_MACHINE_NAME:-bully}
+DOCKER_NETWORK=${HOST}_default
 PUBLIC_HOST=${MY_DOMAIN:-localhost}
+#	Don't overwrite				#
 PRIVATE_HOST=${HOST}
