@@ -1,179 +1,195 @@
 name: arr
 
-networks:
-  default:
-    name: bully_network
-    external: true
-
 services:
 
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    profiles: [core]
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *gpu_access, *mnt_access, *web_ui]
+    profiles: [arr, jellyfin]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/jellyfin:/config
-      - ${MEDIA}:/data # /data/movies, /data/tv, etc.
-    ports:
-      - "8096:8096"
-    devices:
-      - /dev/dri:/dev/dri # GPU access for transcoding
+    # ports:
+    #   - "8096:8096"
+    # devices:
+    #   - /dev/dri:/dev/dri # GPU access for transcoding
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${PUBLIC_HOST}`) || Host(`media.${PUBLIC_HOST}`) || Host(`jellyfin.${PRIVATE_HOST}`) || Host(`media.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.jellyfin.entrypoints=websecure"
-      - "traefik.http.routers.jellyfin.tls=true"
-      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+      traefik.http.services.git.loadbalancer.server.port: "8096"
+      #- "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.${PUBLIC_HOST}`) || Host(`parkway.${PUBLIC_HOST}`)"
+      # - "traefik.http.routers.jellyfin.entrypoints=websecure"
+      # - "traefik.http.routers.jellyfin.tls=true"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
-    profiles: [core]
     container_name: qbittorrent
-    restart: unless-stopped
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr, jellyfin]
+    #restart: unless-stopped
     network_mode: bridge
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+      # - PUID=1000
+      # - PGID=1000
+      # - TZ=America/New_York
       - WEBUI_PORT=8080
     volumes:
       - ${CONFIG}/qbittorrent:/config
-      - ${MEDIA}:/data      # Downloads land at /data/downloads/complete and /incomplete
+      # - ${MOUNT}:/data      # Downloads land at /data/downloads/complete and /incomplete
     ports:
       - "8081:8080"         # Host port 8081: 8080 taken by Traefik dashboard, 8082 by NocoDB
       - "6881:6881"         # Torrent peer port TCP
       - "6881:6881/udp"     # Torrent peer port UDP
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${PUBLIC_HOST}`) || Host(`qbt.${PUBLIC_HOST}`) || Host(`qbittorrent.${PRIVATE_HOST}`) || Host(`qbt.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.qbittorrent.entrypoints=websecure"
-      - "traefik.http.routers.qbittorrent.tls=true"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+      traefik.http.services.git.loadbalancer.server.port: "8081"
+
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${PUBLIC_HOST}`) || Host(`qbt.${PUBLIC_HOST}`) || Host(`qbittorrent.${PRIVATE_HOST}`) || Host(`qbt.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.qbittorrent.entrypoints=websecure"
+      # - "traefik.http.routers.qbittorrent.tls=true"
+      # - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
   
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
-    profiles: [core]
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *web_ui]
+    profiles: [arr]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/prowlarr:/config
-    ports:
-      - "9696:9696"
+    # ports:
+    #   - "9696:9696"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${PUBLIC_HOST}`) || Host(`prowlarr.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.prowlarr.entrypoints=websecure"
-      - "traefik.http.routers.prowlarr.tls=true"
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      traefik.http.services.git.loadbalancer.server.port: "9696"
+
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${PUBLIC_HOST}`) || Host(`prowlarr.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.prowlarr.entrypoints=websecure"
+      # - "traefik.http.routers.prowlarr.tls=true"
+      # - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/sonarr:/config
-      - ${MEDIA}:/data # TV at /data/tv, completed downloads at /data/downloads/complete
-    ports:
-      - "8989:8989"
+      # - ${MOUNT}:/data # TV at /data/tv, completed downloads at /data/downloads/complete
+    # ports:
+    #   - "8989:8989"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${PUBLIC_HOST}`) || Host(`sonarr.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.sonarr.entrypoints=websecure"
-      - "traefik.http.routers.sonarr.tls=true"
-      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
+      traefik.http.services.git.loadbalancer.server.port: "8989"
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.sonarr.rule=Host(`sonarr.${PUBLIC_HOST}`) || Host(`sonarr.${PRIVATE_HOST}`)"
+    #   - "traefik.http.routers.sonarr.entrypoints=websecure"
+    #   - "traefik.http.routers.sonarr.tls=true"
+    #   - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/radarr:/config
-      - ${MEDIA}:/data # Movies at /data/movies, completed downloads at /data/downloads/complete
-    ports:
-      - "7878:7878"
+      # - ${MOUNT}:/data # Movies at /data/movies, completed downloads at /data/downloads/complete
+    # ports:
+    #   - "7878:7878"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.radarr.rule=Host(`radarr.${PUBLIC_HOST}`) || Host(`radarr.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.radarr.entrypoints=websecure"
-      - "traefik.http.routers.radarr.tls=true"
-      - "traefik.http.services.radarr.loadbalancer.server.port=7878"
+      traefik.http.services.git.loadbalancer.server.port: "7878"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.radarr.rule=Host(`radarr.${PUBLIC_HOST}`) || Host(`radarr.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.radarr.entrypoints=websecure"
+      # - "traefik.http.routers.radarr.tls=true"
+      # - "traefik.http.services.radarr.loadbalancer.server.port=7878"
 
   jackett:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr, books]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/jackett:/config
-    ports:
-      - "9117:9117"
+    # ports:
+    #   - "9117:9117"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.jackett.rule=Host(`jackett.${PUBLIC_HOST}`) || Host(`jackett.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.jackett.entrypoints=websecure"
-      - "traefik.http.routers.jackett.tls=true"
-      - "traefik.http.services.jackett.loadbalancer.server.port=9117"
+      traefik.http.services.git.loadbalancer.server.port: "7878"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.jackett.rule=Host(`jackett.${PUBLIC_HOST}`) || Host(`jackett.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.jackett.entrypoints=websecure"
+      # - "traefik.http.routers.jackett.tls=true"
+      # - "traefik.http.services.jackett.loadbalancer.server.port=9117"
 
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/bazarr:/config
-      - ${MEDIA}:/data # Needs read access to media files to match subtitles
-    ports:
-      - "6767:6767"
+      # - ${MOUNT}:/data # Needs read access to media files to match subtitles
+    # ports:
+    #   - "6767:6767"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bazarr.rule=Host(`bazarr.${PUBLIC_HOST}`) || Host(`bazarr.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.bazarr.entrypoints=websecure"
-      - "traefik.http.routers.bazarr.tls=true"
-      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+      traefik.http.services.git.loadbalancer.server.port: "6767"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.bazarr.rule=Host(`bazarr.${PUBLIC_HOST}`) || Host(`bazarr.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.bazarr.entrypoints=websecure"
+      # - "traefik.http.routers.bazarr.tls=true"
+      # - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
 
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [arr, books]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/audiobookshelf/config:/config
       - ${CONFIG}/audiobookshelf/metadata:/metadata
-      - ${MEDIA}:/data # Audiobooks at /data/audiobooks, books at /data/books
-    ports:
-      - "13378:80"
+      # - ${MOUNT}:/data # Audiobooks at /data/audiobooks, books at /data/books
+    # ports:
+    #   - "13378:80"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${PUBLIC_HOST}`) || Host(`abs.${PUBLIC_HOST}`) || Host(`audiobookshelf.${PRIVATE_HOST}`) || Host(`abs.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.audiobookshelf.entrypoints=websecure"
-      - "traefik.http.routers.audiobookshelf.tls=true"
-      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+      traefik.http.services.git.loadbalancer.server.port: "13378"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${PUBLIC_HOST}`) || Host(`abs.${PUBLIC_HOST}`) || Host(`audiobookshelf.${PRIVATE_HOST}`) || Host(`abs.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.audiobookshelf.entrypoints=websecure"
+      # - "traefik.http.routers.audiobookshelf.tls=true"
+      # - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
 
   #######################
   ### TIME-OUT CORNER ###
@@ -181,33 +197,35 @@ services:
 
   flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
-    profiles: [time-out]
     container_name: flaresolverr
-    restart: unless-stopped
+    <<: [*default]
+    profiles: [time-out]
+    # restart: unless-stopped
     environment:
       - LOG_LEVEL=debug
-      - TZ=America/New_York
-    ports:
-      - "8191:8191"
+      # - TZ=America/New_York
+    # ports:
+    #   - "8191:8191"
     security_opt:
       - seccomp=unconfined
-    labels:
-      - "traefik.enable=false"
+    # labels:
+    #   - "traefik.enable=false"
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    <<: [*default, *web_ui]
     profiles: [time-out]
     init: true
-    container_name: seerr
-    restart: unless-stopped
+    # restart: unless-stopped
     environment:
       - LOG_LEVEL=info
-      - TZ=America/New_York
+      # - TZ=America/New_York
       - PORT=5055
     volumes:
       - ${CONFIG}/seerr:/app/config
-    ports:
-      - "5055:5055"
+    # ports:
+    #   - "5055:5055"
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
       start_period: 20s
@@ -217,29 +235,32 @@ services:
     depends_on:
       - jellyfin
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.seerr.rule=Host(`seerr.${PUBLIC_HOST}`) || Host(`request.${PUBLIC_HOST}`) || Host(`seerr.${PRIVATE_HOST}`) || Host(`request.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.seerr.entrypoints=websecure"
-      - "traefik.http.routers.seerr.tls=true"
-      - "traefik.http.services.seerr.loadbalancer.server.port=5055"
+      traefik.http.services.git.loadbalancer.server.port: "5055"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.seerr.rule=Host(`seerr.${PUBLIC_HOST}`) || Host(`request.${PUBLIC_HOST}`) || Host(`seerr.${PRIVATE_HOST}`) || Host(`request.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.seerr.entrypoints=websecure"
+      # - "traefik.http.routers.seerr.tls=true"
+      # - "traefik.http.services.seerr.loadbalancer.server.port=5055"
 
   lazylibrarian:
     image: lscr.io/linuxserver/lazylibrarian:latest
-    profiles: [time-out]
     container_name: lazylibrarian
-    restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/New_York
+    <<: [*default, *mnt_access, *web_ui]
+    profiles: [time-out]
+    # restart: unless-stopped
+    # environment:
+    #   - PUID=1000
+    #   - PGID=1000
+    #   - TZ=America/New_York
     volumes:
       - ${CONFIG}/lazylibrarian:/config
-      - ${MEDIA}:/data # Downloads at /data/downloads/complete, books at /data/books, etc.
-    ports:
-      - "5299:5299"
+      # - ${MOUNT}:/data # Downloads at /data/downloads/complete, books at /data/books, etc.
+    # ports:
+    #   - "5299:5299"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.${PUBLIC_HOST}`) || Host(`ll.${PUBLIC_HOST}`) || Host(`lazylibrarian.${PRIVATE_HOST}`) || Host(`ll.${PRIVATE_HOST}`)"
-      - "traefik.http.routers.lazylibrarian.entrypoints=websecure"
-      - "traefik.http.routers.lazylibrarian.tls=true"
-      - "traefik.http.services.lazylibrarian.loadbalancer.server.port=5299"
+      traefik.http.services.git.loadbalancer.server.port: "5299"
+      # - "traefik.enable=true"
+      # - "traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.${PUBLIC_HOST}`) || Host(`ll.${PUBLIC_HOST}`) || Host(`lazylibrarian.${PRIVATE_HOST}`) || Host(`ll.${PRIVATE_HOST}`)"
+      # - "traefik.http.routers.lazylibrarian.entrypoints=websecure"
+      # - "traefik.http.routers.lazylibrarian.tls=true"
+      # - "traefik.http.services.lazylibrarian.loadbalancer.server.port=5299"

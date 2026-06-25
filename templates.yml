@@ -1,0 +1,34 @@
+services:
+  default: &default
+    restart: unless-stopped
+    environment:
+      - USER_UID=${UID:-1000}
+      - USER_GID=${GID:-1000}
+      - TZ=America/New_York
+    env_file:
+      - ../.env #uses system-wide variables as-needed
+      - .env
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+  
+  web_ui: &web_ui
+    labels:
+      traefik.enable: "true"
+
+  mnt_access: &mnt_access
+    volumes:
+      - "${MOUNT}:/data"
+
+  gpu: &gpu_access
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    group_add:
+      - "987"  # render
+      - "983"  # video
+  
+
+  
