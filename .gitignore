@@ -1,3 +1,8 @@
+# OS files
+.DS_Store
+Docs/*
+.backups/*
+
 # Secrets & Env files
 .__*
 .env
@@ -23,11 +28,6 @@ venv/
 .venv/
 .pytest_cache/
 
-
-# OS files
-.DS_Store
-Docs/*
-.backups/*
 
 
 # override
